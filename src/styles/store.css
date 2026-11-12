@@ -398,7 +398,7 @@ html[data-mode="express"] .aisle-bar { display: none; }
   .aisle-bar a { min-width: 36px; padding: 0 6px; }
   .express-toggle__sign { font-size: 9px; }
 
-  .sf__world { width: 200vw; bottom: 16vh; }
+  .sf__world { width: min(200vw, 135vh); bottom: 16vh; } /* capped so the sign clears the nav on tall tablets */
   .sf::after {
     content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: calc(16vh + 2px);
     background: repeating-linear-gradient(90deg, var(--paper-raised) 0 88px, var(--line) 88px 90px);

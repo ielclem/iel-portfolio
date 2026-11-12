@@ -1,0 +1,57 @@
+---
+import { PROJECTS, LINKS, RECEIPT, projectHref } from '../../data/site';
+---
+<section id="express" class="express" aria-labelledby="express-title">
+  <div class="express__inner">
+    <p class="express__badge">recruiter mode · the quick version</p>
+    <h1 id="express-title" class="express__name">Iel Clemente</h1>
+    <p class="express__role">Product designer</p>
+    <p class="express__summary">A two-line summary goes here: the kind of products you design, what you're strongest at, and what you're looking for next.</p>
+    <ul class="express__contact">
+      <li><a href={LINKS.linkedin} target="_blank" rel="noopener">LinkedIn</a></li>
+      <li><a href={`mailto:${LINKS.email}`}>{LINKS.email}</a></li>
+      <li>{LINKS.resume ? <a href={LINKS.resume}>Résumé (PDF)</a> : <span class="soon">Résumé coming soon</span>}</li>
+    </ul>
+
+    <h2 class="express__h2">Selected work</h2>
+    <ul class="express__projects">
+      {PROJECTS.map((p) => (
+        <li class={`xcard${p.restocking ? ' xcard--soon' : ''}`}>
+          {p.coverSmall
+            ? <img class="xcard__thumb" src={p.coverSmall} alt="" width="720" height="405" loading="lazy" />
+            : <div class="xcard__thumb" aria-hidden="true">aisle {p.aisle}</div>}
+          <div class="xcard__body">
+            <h3>{p.title}{p.type && <span class="xcard__type"> · {p.type}</span>}</h3>
+            <dl>
+              <div><dt>Role</dt><dd>{p.role}</dd></div>
+              <div><dt>Problem</dt><dd>{p.problem}</dd></div>
+              <div><dt>Outcome</dt><dd>{p.outcome}</dd></div>
+            </dl>
+            {projectHref(p)
+              ? <a class="xcard__link xcard__link--live" href={projectHref(p)!}>Read the case study →</a>
+              : <span class="xcard__link">In progress</span>}
+          </div>
+        </li>
+      ))}
+    </ul>
+
+    <div class="express__cols">
+      <div>
+        <h2 class="express__h2">Skills</h2>
+        <ul class="express__chips">
+          {RECEIPT.map((r) => <li>{r.item}</li>)}
+        </ul>
+      </div>
+      <div>
+        <h2 class="express__h2">Experience</h2>
+        <ul class="express__exp">
+          <li><strong>Role, Company</strong><span>Year – Year</span></li>
+          <li><strong>Role, Company</strong><span>Year – Year</span></li>
+          <li><strong>Education</strong><span>Year</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <button class="express__back" id="express-back" type="button">← back to the full store experience</button>
+  </div>
+</section>

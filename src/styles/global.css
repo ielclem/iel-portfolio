@@ -1,0 +1,59 @@
+/* Iel Portfolio design system: tokens from the design system page */
+@font-face {
+  font-family: "Ngaco";
+  src: url("../assets/fonts/ngaco.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Figtree";
+  src: url("../assets/fonts/figtree-var.woff2") format("woff2");
+  font-weight: 300 900;
+  font-display: swap;
+}
+
+:root {
+  --paper: #FBEACC;
+  --paper-raised: #FDF5E6;
+  --ink: #3A2418;
+  --ink-muted: #755A48;
+  --rust: #8F4220;
+  --rust-deep: #74351A;
+  --moss: #4F6B2A;
+  --sun: #D4AE40;
+  --sun-text: #7F661D;
+  --sage: #E8ECD3;
+  --line: #C9A985;
+  --illus-salmon: #DA8868;
+
+  --font-display: "Ngaco", "Figtree", system-ui, sans-serif;
+  --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px;
+  --space-6: 32px; --space-7: 48px; --space-8: 64px; --space-9: 96px;
+  --gutter: clamp(16px, 5vw, 96px);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+img { max-width: 100%; display: block; }
+
+a { color: var(--rust); }
+
+:focus-visible { outline: 2px solid var(--rust); outline-offset: 3px; }
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}

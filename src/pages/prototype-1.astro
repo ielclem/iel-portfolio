@@ -1,0 +1,25 @@
+---
+import '../styles/global.css';
+import Loader from '../components/Loader.astro';
+import SiteNav from '../components/SiteNav.astro';
+import Hero from '../components/Hero.astro';
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Iel Clemente · Product Designer</title>
+    <meta name="description" content="Iel Clemente is a product designer who draws, designing products like little love letters." />
+    <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
+    <link rel="preload" href={`${base}hero/walk.gif`} as="image" />
+  </head>
+  <body>
+    <Loader />
+    <SiteNav />
+    <main>
+      <Hero />
+    </main>
+  </body>
+</html>

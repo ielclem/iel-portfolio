@@ -1,0 +1,172 @@
+---
+// Hero.astro: greeting, tagline, and the clickable grocery-cart animation.
+// Walk loops; a click waits for walk frame 1, plays the crash, holds its last
+// frame while the caption delivers the pun, then goes back to walking.
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const src = {
+  walk: `${base}hero/walk.gif`,
+  walkStill: `${base}hero/walk-still.png`,
+  crash: `${base}hero/crash.gif`,
+  crashEnd: `${base}hero/crash-end.png`,
+};
+---
+<section class="hero" aria-labelledby="hero-title">
+  <h1 id="hero-title" class="hero__title">
+    hello, im iel<span class="hero__q" aria-hidden="true">?</span>
+  </h1>
+  <p class="hero__quote">“designing products like <strong>little love letters.</strong>”</p>
+
+  <button
+    class="stage"
+    id="hero-stage"
+    type="button"
+    aria-label="Make Iel bump the cart"
+    data-walk={src.walk}
+    data-walk-still={src.walkStill}
+    data-crash={src.crash}
+    data-crash-end={src.crashEnd}
+  >
+    <img id="hero-walk" src={src.walk} alt="Iel, in round glasses and a scarf, pushing a shopping cart full of groceries" width="2048" height="2048" />
+    <img id="hero-crash" alt="" width="2048" height="2048" hidden />
+    <img id="hero-hold" src={src.crashEnd} alt="Iel standing next to the cart, groceries spilled on the floor" width="2048" height="2048" hidden />
+  </button>
+
+  <p class="hero__caption" id="hero-caption" aria-live="polite">(like the grocery aisle)</p>
+</section>
+
+<style>
+  .hero {
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    padding: var(--space-6) var(--gutter) var(--space-9);
+  }
+  .hero__title {
+    font: 400 clamp(48px, 7vw, 88px)/1 var(--font-display);
+    margin: 0; text-wrap: balance;
+  }
+  .hero__q {
+    font-size: .45em; vertical-align: super; color: var(--illus-salmon);
+    margin-left: .05em; display: inline-block; transform: rotate(10deg);
+  }
+  .hero__quote { font-size: clamp(18px, 2vw, 22px); margin: var(--space-3) 0 0; text-wrap: balance; }
+  .hero__quote strong { font-weight: 700; }
+
+  .stage {
+    position: relative; width: min(460px, 86vw); aspect-ratio: 1;
+    margin-top: var(--space-6); padding: 0; border: 0; background: transparent;
+    cursor: pointer; border-radius: 24px;
+  }
+  .stage[aria-disabled="true"] { cursor: default; }
+  .stage img {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    mix-blend-mode: multiply; pointer-events: none; user-select: none;
+  }
+  .stage img[hidden] { display: none; }
+
+  .hero__caption {
+    margin: var(--space-4) 0 0; min-height: 1.6em; font-size: 20px; color: var(--ink);
+  }
+  .hero__caption.is-pun { font: 400 26px/1.3 var(--font-display); color: var(--rust); }
+</style>
+
+<script>
+  import { gsap } from 'gsap';
+
+  // ---- Timing (milliseconds). Tweak these. ----------------------------------
+  const WALK_MS = 1120;         // walk.gif: 8 frames × 140ms
+  const LAST_FRAME_AT = 1260;   // crash.gif: frame 10 starts at 9 × 140ms
+  const PUN_AT = 1260;          // when the caption turns into the pun, from crash start
+  const HOLD_MS = 2500;         // how long to stay on the last crash frame
+  const PUN_EXTRA_MS = 400;     // pun stays this long after walking resumes
+  const PUN = "clean up on 'iel' 2!";
+  // ----------------------------------------------------------------------------
+
+  const stage = document.getElementById('hero-stage') as HTMLButtonElement | null;
+  if (stage) {
+    const walk = document.getElementById('hero-walk') as HTMLImageElement;
+    const crash = document.getElementById('hero-crash') as HTMLImageElement;
+    const hold = document.getElementById('hero-hold') as HTMLImageElement;
+    const caption = document.getElementById('hero-caption') as HTMLParagraphElement;
+    const { walk: WALK, walkStill: WALK_STILL, crash: CRASH, crashEnd: CRASH_END } = stage.dataset as Record<string, string>;
+    const CAPTION = caption.textContent ?? '';
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    let busy = false;
+    let walkStart = performance.now();
+    let n = 0;
+
+    if (reduce) {
+      walk.src = WALK_STILL;
+    } else {
+      // Preload so the first click doesn't stall.
+      new Image().src = CRASH;
+      new Image().src = CRASH_END;
+      if (walk.complete) walkStart = performance.now();
+      else walk.addEventListener('load', () => { walkStart = performance.now(); }, { once: true });
+    }
+
+    // A fresh query string makes the browser restart a GIF from frame 1.
+    const restart = async (img: HTMLImageElement, url: string) => {
+      img.src = `${url}?r=${++n}`;
+      try { await img.decode(); } catch {}
+    };
+
+    const show = (img: HTMLImageElement) => {
+      for (const el of [walk, crash, hold]) el.hidden = el !== img;
+    };
+
+    const setCaption = (text: string, pun: boolean) => {
+      caption.textContent = text;
+      caption.classList.toggle('is-pun', pun);
+      if (!reduce) {
+        gsap.fromTo(caption, { scale: 0.7, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.45, ease: 'back.out(3)' });
+      }
+    };
+
+    const setBusy = (b: boolean) => {
+      busy = b;
+      stage.setAttribute('aria-disabled', String(b));
+    };
+
+    stage.addEventListener('click', async () => {
+      if (busy) return;
+      setBusy(true);
+
+      if (reduce) {
+        show(hold);
+        setCaption(PUN, true);
+        await wait(HOLD_MS);
+        walk.src = WALK_STILL;
+        show(walk);
+        setCaption(CAPTION, false);
+        setBusy(false);
+        return;
+      }
+
+      // Wait for the walk loop to come round to frame 1 (the handoff pose).
+      const elapsed = performance.now() - walkStart;
+      await wait(Math.ceil(elapsed / WALK_MS) * WALK_MS - elapsed);
+
+      await restart(crash, CRASH);
+      show(crash);
+      const crashStart = performance.now();
+
+      const punTimer = setTimeout(() => setCaption(PUN, true), PUN_AT);
+
+      // Swap to the still partway into the last frame, before the GIF can loop.
+      await wait(LAST_FRAME_AT + 60);
+      show(hold);
+
+      await wait(Math.max(HOLD_MS, PUN_AT - (performance.now() - crashStart)));
+      clearTimeout(punTimer);
+
+      await restart(walk, WALK);
+      walkStart = performance.now();
+      show(walk);
+
+      await wait(PUN_EXTRA_MS);
+      setCaption(CAPTION, false);
+      setBusy(false);
+    });
+  }
+</script>

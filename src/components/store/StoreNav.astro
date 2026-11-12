@@ -1,0 +1,40 @@
+---
+import { base, LINKS, PROJECTS } from '../../data/site';
+---
+<header class="snav">
+  <a class="snav__brand" href={`${base}store/`} aria-label="Iel Clemente, back to the top">
+    <img src={`${base}logo.svg`} alt="" width="44" height="44" />
+    <span class="snav__text">
+      <span class="snav__name">iel clemente</span>
+      <span class="snav__role">product designer</span>
+    </span>
+  </a>
+
+  <nav class="snav__right" aria-label="Main">
+    <div class="aisles-menu">
+      <button class="aisles-menu__btn" id="aisles-btn" type="button" aria-expanded="false" aria-controls="aisles-list">
+        aisles <span aria-hidden="true">▾</span>
+      </button>
+      <ul class="aisles-menu__list" id="aisles-list" hidden>
+        {PROJECTS.map((p) => (
+          <li>
+            <a href={`#aisle-${p.aisle}`} data-jump={`aisle-${p.aisle}`}>
+              <span class="aisles-menu__num">{p.aisle}</span>
+              <span>{p.title}{p.restocking && <em> · restocking</em>}</span>
+            </a>
+          </li>
+        ))}
+        <li><a href="#checkout" data-jump="checkout"><span class="aisles-menu__num">$</span><span>checkout · about</span></a></li>
+        <li><a href="#closing" data-jump="closing"><span class="aisles-menu__num">@</span><span>contact</span></a></li>
+      </ul>
+    </div>
+    <button class="express-toggle" id="express-toggle" type="button" aria-pressed="false">
+      <span class="express-toggle__label">recruiter mode</span>
+    </button>
+    <ul class="snav__links">
+      <li><a href={LINKS.linkedin} target="_blank" rel="noopener">linkedin</a></li>
+      <li><a href={`mailto:${LINKS.email}`} title={LINKS.email}>email</a></li>
+      <li>{LINKS.resume ? <a href={LINKS.resume} target="_blank" rel="noopener">resume</a> : <span class="soon" title="Résumé coming soon">resume</span>}</li>
+    </ul>
+  </nav>
+</header>

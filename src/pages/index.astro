@@ -1,16 +1,22 @@
 ---
+// The main link opens the store. A static redirect, so it works on GitHub Pages.
+import { base } from '../data/site';
+const target = `${base}store/`;
 ---
-
 <html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Iel Clemente · Product Designer</title>
+    <meta http-equiv="refresh" content={`0; url=${target}`} />
+    <link rel="canonical" href={target} />
+    <script is:inline define:vars={{ target }}>
+      // Carry any #recruiter or #aisle-N along with the redirect.
+      location.replace(target + location.hash);
+    </script>
+    <style>body { margin: 0; background: #FBEACC; color: #3A2418; font: 18px/1.6 system-ui, sans-serif; display: grid; place-items: center; min-height: 100vh; }</style>
+  </head>
+  <body>
+    <p>Opening the store… <a href={target}>step inside</a></p>
+  </body>
 </html>

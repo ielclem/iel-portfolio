@@ -1,0 +1,17 @@
+---
+import { base, STORE_NAME, LINKS } from '../../data/site';
+---
+<section id="closing" class="closing" aria-labelledby="closing-title">
+  <div class="closing__sign-wrap" aria-hidden="true">
+    <div class="closing__sign" id="closing-sign">open</div>
+  </div>
+  <h2 id="closing-title" class="closing__title split">thanks for stopping by</h2>
+  <p class="closing__lead">{STORE_NAME} is always open for new projects. come say hello!</p>
+  <ul class="closing__links">
+    <li><a href={LINKS.linkedin} target="_blank" rel="noopener">linkedin</a></li>
+    <li><a href={`mailto:${LINKS.email}`}>{LINKS.email}</a></li>
+    <li>{LINKS.resume ? <a href={LINKS.resume} target="_blank" rel="noopener">résumé</a> : <span class="soon">résumé coming soon</span>}</li>
+  </ul>
+  <a class="closing__back" href={`${base}store/`} data-jump="storefront">↑ back to the store entrance</a>
+  <p class="closing__foot">© 2026 Iel Clemente · assets are subject to change and will be hand drawn</p>
+</section>

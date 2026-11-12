@@ -1,0 +1,129 @@
+---
+// Product page: one case study, framed as a product picked off the shelf.
+import '../../styles/global.css';
+import '../../styles/product.css';
+import { base, LINKS, LOREM, PROJECTS, projectHref, type Figure, type Project } from '../../data/site';
+
+export function getStaticPaths() {
+  return PROJECTS.filter((p) => p.slug).map((p) => ({ params: { slug: p.slug }, props: { project: p } }));
+}
+
+const { project: p } = Astro.props as { project: Project };
+const stocked = PROJECTS.filter((x) => x.slug);
+const next = stocked[(stocked.indexOf(p) + 1) % stocked.length];
+const back = `${base}store/#aisle-${p.aisle}`;
+const f = p.figures ?? {};
+
+const sections: { id: string; label: string; title: string; paras: string[]; figures?: Figure[] }[] = [
+  { id: 'background', label: 'background', title: 'Where it started', paras: [LOREM.para, LOREM.para2], figures: f.background },
+  { id: 'problem', label: 'the problem', title: 'What needed fixing', paras: [LOREM.para], figures: f.problem },
+  { id: 'process', label: 'the process', title: 'How it came together', paras: [LOREM.para, LOREM.para2], figures: f.process },
+  { id: 'solution', label: 'solution & outcome', title: 'What shipped, and what changed', paras: [LOREM.para, LOREM.para2], figures: f.solution },
+];
+
+const facts: [string, string | undefined][] = [
+  ['Type', p.type], ['Role', p.role], ['Timeline', p.timeline], ['Team', p.team], ['Ingredients', p.tools],
+];
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{p.title} · Iel Clemente</title>
+    <meta name="description" content={`${p.title}: ${p.type}. A case study by Iel Clemente, product designer.`} />
+    <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
+  </head>
+  <body class="pp">
+    <header class="pp-nav">
+      <a class="pp-nav__back" href={back}><span aria-hidden="true">←</span> back to aisle {p.aisle}</a>
+      <a class="pp-nav__brand" href={`${base}store/`} aria-label="Iel Clemente, back to the store">
+        <img src={`${base}logo.svg`} alt="" width="40" height="40" />
+        <span>iel clemente</span>
+      </a>
+      <a class="pp-nav__contact" href={`mailto:${LINKS.email}`}>email me</a>
+    </header>
+
+    <main>
+      <!-- the product -->
+      <section class="pp-hero" aria-labelledby="pp-title">
+        <div class="pp-pack">
+          <span class="pp-pack__sticker">aisle {p.aisle} · {p.section}</span>
+          <img class="pp-pack__img" src={p.cover} alt={`${p.title} cover`} width="2160" height="1215" fetchpriority="high" />
+        </div>
+
+        <div class="pp-hero__text">
+          <h1 id="pp-title" class="pp-title">{p.title}</h1>
+          <p class="pp-tagline">{p.tagline}</p>
+
+          <aside class="facts" aria-label="Project facts">
+            <p class="facts__head">Project Facts</p>
+            <p class="facts__serving">1 case study · about 5 min read</p>
+            <dl>
+              {facts.map(([k, v]) => v && <div><dt>{k}</dt><dd>{v}</dd></div>)}
+            </dl>
+            <p class="facts__outcome"><span>Outcome</span>{p.outcome}</p>
+          </aside>
+
+          {p.video && <a class="pp-video" href={p.video.href} target="_blank" rel="noopener">▶ {p.video.label}</a>}
+        </div>
+      </section>
+
+      <!-- tl;dr -->
+      <section class="pp-tldr" aria-labelledby="tldr-title">
+        <h2 id="tldr-title" class="pp-label">tl;dr</h2>
+        <p>{LOREM.para}</p>
+      </section>
+
+      {sections.map((s) => (
+        <section class="pp-section reveal" id={s.id} aria-labelledby={`${s.id}-title`}>
+          <div class="pp-section__text">
+            <p class="pp-label">{s.label}</p>
+            <h2 id={`${s.id}-title`} class="pp-h2">{s.title}</h2>
+            {s.paras.map((t) => <p>{t}</p>)}
+          </div>
+          {s.figures?.map((fig) => (
+            <figure class="pp-figure">
+              <a href={fig.src} target="_blank" rel="noopener" aria-label={`Open full size: ${fig.alt}`}>
+                <img src={fig.src} alt={fig.alt} width="2160" height="1215" loading="lazy" decoding="async" />
+              </a>
+              <figcaption>{fig.caption}</figcaption>
+            </figure>
+          ))}
+        </section>
+      ))}
+
+      <!-- next product -->
+      <section class="pp-next" aria-labelledby="next-title">
+        <p class="pp-label">you might also like</p>
+        <a class="pp-next__card" href={projectHref(next)!}>
+          <img src={next.coverSmall} alt="" width="720" height="405" loading="lazy" />
+          <span class="pp-next__text">
+            <span class="pp-next__aisle">aisle {next.aisle} · {next.section}</span>
+            <span id="next-title" class="pp-next__title">{next.title}</span>
+            <span class="pp-next__type">{next.type} →</span>
+          </span>
+        </a>
+        <a class="pp-backlink" href={back}>← back to the store</a>
+      </section>
+    </main>
+
+    <footer class="pp-foot">
+      <a href={LINKS.linkedin} target="_blank" rel="noopener">linkedin</a>
+      <a href={`mailto:${LINKS.email}`}>{LINKS.email}</a>
+      <span>© 2026 Iel Clemente</span>
+    </footer>
+
+    <script>
+      // Sections fade up once as they arrive. Everything is visible without this script.
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const els = document.querySelectorAll('.reveal');
+      if (!reduce && 'IntersectionObserver' in window) {
+        els.forEach((el) => el.classList.add('is-waiting'));
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.remove('is-waiting'); io.unobserve(e.target); } });
+        }, { rootMargin: '0px 0px -10% 0px' });
+        els.forEach((el) => io.observe(el));
+      }
+    </script>
+  </body>
+</html>

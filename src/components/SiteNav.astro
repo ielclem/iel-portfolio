@@ -1,0 +1,61 @@
+---
+// SiteNav.astro: logo lockup on the left, contact links on the right.
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+
+const LINKEDIN = 'https://www.linkedin.com/in/iel-seth-clemente-ba0793295/';
+const EMAIL = 'ielsethclemente@gmail.com';
+// Set this to the résumé file once it's in /public, e.g. `${base}resume.pdf`.
+const RESUME: string | null = null;
+---
+<header class="site-nav">
+  <a class="brand" href={base} aria-label="Iel Clemente, home">
+    <img class="brand__logo" src={`${base}logo.svg`} alt="" width="56" height="56" />
+    <span class="brand__text">
+      <span class="brand__name">iel clemente</span>
+      <span class="brand__role">product designer</span>
+    </span>
+  </a>
+
+  <nav aria-label="Contact">
+    <ul class="links">
+      <li><a href={LINKEDIN} target="_blank" rel="noopener">linkedin</a></li>
+      <li><a href={`mailto:${EMAIL}`} title={EMAIL}>email</a></li>
+      <li>
+        {RESUME
+          ? <a href={RESUME} target="_blank" rel="noopener">resume</a>
+          : <span class="soon" title="Résumé coming soon">resume</span>}
+      </li>
+    </ul>
+  </nav>
+</header>
+
+<style>
+  .site-nav {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--space-5);
+    flex-wrap: wrap;
+    padding: var(--space-6) var(--gutter) var(--space-4);
+  }
+  .brand {
+    display: flex; align-items: center; gap: var(--space-3);
+    color: var(--ink); text-decoration: none;
+  }
+  .brand__logo { width: 56px; height: 56px; }
+  .brand__text { display: flex; flex-direction: column; line-height: 1; }
+  .brand__name { font: 400 30px/1 var(--font-display); }
+  .brand__role { font: 400 14px/1.4 var(--font-body); color: var(--ink-muted); margin-top: 4px; }
+
+  .links { display: flex; gap: clamp(16px, 3vw, 48px); list-style: none; margin: 0; padding: 0; }
+  .links a, .links .soon {
+    font: 600 18px/44px var(--font-body); color: var(--ink); text-decoration: none;
+    border-bottom: 2px solid transparent; display: inline-block;
+  }
+  .links a:hover { color: var(--rust); border-bottom-color: var(--rust); }
+  .links .soon { color: var(--ink-muted); cursor: default; }
+
+  @media (max-width: 560px) {
+    .site-nav { padding-top: var(--space-5); }
+    .brand__logo { width: 44px; height: 44px; }
+    .brand__name { font-size: 24px; }
+    .links a, .links .soon { font-size: 16px; }
+  }
+</style>

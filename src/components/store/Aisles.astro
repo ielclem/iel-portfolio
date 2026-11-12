@@ -1,0 +1,72 @@
+---
+import { base, PROJECTS, projectHref } from '../../data/site';
+const n = PROJECTS.length;
+const shapes = ['box', 'can', 'jar', 'bag', 'box', 'can', 'jar', 'can', 'box'];
+// Boxes and bags wear a crop of the project's cover art; each crop shows a different part.
+const crops = ['20% 30%', '80% 20%', '50% 70%', '10% 80%', '90% 75%', '50% 40%', '30% 10%', '70% 50%', '40% 90%'];
+---
+<section id="aisles" class="aisles" aria-label="Projects" style={`--n:${n}`}>
+  <div class="aisles__pin">
+    <div class="aisles__back" aria-hidden="true">
+      {PROJECTS.map((p, i) => (
+        <span class="wall-banner" style={`left:calc(${i} * 45vw + 40vw)`}>{p.section}</span>
+      ))}
+      <span class="wall-clock" style="left:22vw"></span>
+      <span class="wall-clock" style="left:150vw"></span>
+    </div>
+
+    <div class="aisles__floor" aria-hidden="true"></div>
+
+    <div class="aisles__track">
+      {PROJECTS.map((p, i) => (
+        <article class={`aisle${p.restocking ? ' aisle--restock' : ''}`} id={`aisle-${p.aisle}`} aria-labelledby={`aisle-${p.aisle}-title`}>
+          <a class="endcap" href={`#aisle-${p.aisle}`} tabindex="-1" aria-hidden="true">
+            <span class="endcap__wires"></span>
+            <span class="endcap__board boil">
+              <span class="endcap__num">{p.aisle}</span>
+              <span class="endcap__name">{p.section}</span>
+            </span>
+          </a>
+
+          {(() => {
+            const href = projectHref(p);
+            const rows = [0, 1, 2].map((row) => (
+              <div class="shelf-row">
+                {p.restocking
+                  ? <span class="product product--empty">?</span>
+                  : shapes.slice(row * 3, row * 3 + 3).map((s, k) => {
+                      const covered = p.coverSmall && (s === 'box' || s === 'bag');
+                      return (
+                        <span
+                          class={`product product--${s}${covered ? ' has-cover' : ''} boil`}
+                          style={covered ? `--cover:url(${p.coverSmall});--pos:${crops[row * 3 + k]}` : undefined}
+                        ><span>{covered ? '' : p.title}</span></span>
+                      );
+                    })}
+              </div>
+            ));
+            return href
+              ? <a class="aisle__shelf" href={href} tabindex="-1" aria-hidden="true">{rows}</a>
+              : <div class="aisle__shelf" aria-hidden="true">{rows}{p.restocking && <span class="caution-tape">restocking · back soon · restocking · back soon</span>}</div>;
+          })()}
+
+          <div class="aisle__info">
+            <span class="aisle__label">aisle {p.aisle} · {p.section}{p.type && ` · ${p.type}`}</span>
+            <h2 class="aisle__title split" id={`aisle-${p.aisle}-title`}>{p.title}</h2>
+            <p class="aisle__tagline">{p.tagline}</p>
+            {projectHref(p)
+              ? <a class="price-tag price-tag--link" href={projectHref(p)!}>view case study →</a>
+              : <span class="price-tag" aria-disabled="true">back soon</span>}
+          </div>
+        </article>
+      ))}
+    </div>
+
+    <div class="aisles__front" aria-hidden="true">
+      <span class="basket-stack" style="left:115vw"></span>
+      <span class="basket-stack" style="left:330vw"></span>
+    </div>
+
+    <div class="walker walker--aisle" id="aisle-walker" style={`--sprite: url(${base}hero/walk-sprite.webp)`} role="img" aria-label="Iel pushing the cart down the aisle"></div>
+  </div>
+</section>

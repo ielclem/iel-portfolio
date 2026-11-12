@@ -22,3 +22,11 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# Impeccable engine binary (re-downloaded by `npx impeccable install`)
+.claude/skills/impeccable/scripts/bin/
+
+# Working files that stay on this computer (Procreate Dreams, Illustrator, test exports)
+*.mdz
+*.ai
+test.gif

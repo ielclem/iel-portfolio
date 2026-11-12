@@ -1,0 +1,23 @@
+---
+import { PROJECTS } from '../../data/site';
+---
+<section id="directory" class="dir" aria-labelledby="dir-title">
+  <div class="dir__head">
+    <h2 id="dir-title" class="dir__title split">store directory</h2>
+    <p class="dir__sub">Pick an aisle, or keep scrolling to browse them all.</p>
+  </div>
+  <ol class="dir__signs" style={`--signs:${PROJECTS.length}`}>
+    {PROJECTS.map((p, i) => (
+      <li>
+        <a class={`hsign${p.restocking ? ' hsign--restock' : ''}`} href={`#aisle-${p.aisle}`} data-jump={`aisle-${p.aisle}`} data-aisle-index={i}>
+          <span class="hsign__wires" aria-hidden="true"></span>
+          <span class="hsign__board boil">
+            <span class="hsign__num">aisle {p.aisle}</span>
+            <span class="hsign__title">{p.title}</span>
+            {p.restocking && <span class="hsign__tape" aria-hidden="true">restocking</span>}
+          </span>
+        </a>
+      </li>
+    ))}
+  </ol>
+</section>

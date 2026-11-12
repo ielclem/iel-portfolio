@@ -11,15 +11,27 @@ const FRAMES = 8;              // frames in walk-sprite.webp
 const PX_PER_FRAME = 70;       // horizontal scroll distance per walk frame in the aisles
 const STOREFRONT_LENGTH = 2.6; // storefront scroll length, in screen heights
 const BOIL_MS = 140;           // how often hand-drawn lines wobble
+const IDLE_AFTER_MS = 220;     // stop scrolling this long and the character switches to the idle pose
 // --------------------------------------------------------------------------
 
 const root = document.documentElement;
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
+// The sprite holds the 8 walk frames and then the idle pose (frame 8).
+const IDLE_FRAME = FRAMES;
+const placeFrame = (el: HTMLElement, f: number) => { el.style.backgroundPositionX = `${(f * 100) / FRAMES}%`; };
+
+// Walking shows a frame for the scroll position; when scrolling stops, the character idles.
+const idleTimers = new WeakMap<HTMLElement, number>();
 const setFrame = (el: HTMLElement, i: number) => {
-  const f = ((i % FRAMES) + FRAMES) % FRAMES;
-  el.style.backgroundPositionX = `${(f * 100) / (FRAMES - 1)}%`;
+  placeFrame(el, ((i % FRAMES) + FRAMES) % FRAMES);
+  window.clearTimeout(idleTimers.get(el));
+  idleTimers.set(el, window.setTimeout(() => placeFrame(el, IDLE_FRAME), IDLE_AFTER_MS));
 };
+const setIdle = (el: HTMLElement | null) => el && placeFrame(el, IDLE_FRAME);
+// Start idle (and stay idle for reduced motion, where nothing walks).
+setIdle(document.getElementById('sf-walker'));
+setIdle(document.getElementById('aisle-walker'));
 
 // ---- Boiling lines: re-seed the noise filter so drawings feel hand-animated
 let boilTimer: number | undefined;

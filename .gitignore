@@ -30,3 +30,9 @@ pnpm-debug.log*
 *.mdz
 *.ai
 test.gif
+
+# Drawing source files and temp files (exported images live in public/store)
+*.psd
+*.mdp
+SVG/
+*.tmp

@@ -147,7 +147,7 @@ html[data-mode="express"] .aisle-bar { display: none; }
 .sf__open { font: 400 28px var(--font-display); fill: var(--paper); stroke: none; }
 .sf__chalk { font: 600 21px var(--font-body); fill: var(--paper); stroke: none; }
 .sf__chalk--small { font-size: 15px; letter-spacing: .08em; text-transform: uppercase; fill: var(--sun); }
-.sf .walker { height: 44%; left: -24%; bottom: 5.4%; } /* the sprite has room under the walking feet for the idle pose */
+.sf .walker { height: 32.5%; left: -20%; bottom: 8.8%; } /* sized to the drawn storefront; feet on its ground line */
 .sf__veil { position: absolute; inset: 0; background: var(--interior); opacity: 0; visibility: hidden; pointer-events: none; }
 .sf__hint {
   position: absolute; left: 50%; top: calc(var(--nav-h) + 12px); translate: -50% 0; margin: 0;
@@ -400,11 +400,6 @@ html[data-mode="express"] .aisle-bar { display: none; }
   .express-toggle__sign { font-size: 9px; }
 
   .sf__world { width: min(200vw, 135vh); bottom: 16vh; } /* capped so the sign clears the nav on tall tablets */
-  .sf::after {
-    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: calc(16vh + 2px);
-    background: repeating-linear-gradient(90deg, var(--paper-raised) 0 88px, var(--line) 88px 90px);
-    border-top: 3px solid var(--linework); z-index: -1;
-  }
   .sf__stage { z-index: 0; }
   .sf { isolation: isolate; }
   .sf__hint { font-size: 13px; }
@@ -431,7 +426,7 @@ html[data-mode="express"] .aisle-bar { display: none; }
 /* ---------- reduced motion: everything visible, nothing pinned ---------- */
 @media (prefers-reduced-motion: reduce) {
   .boil { filter: none; }
-  .sf .walker { left: 36%; }
+  .sf .walker { left: 46%; }
   .aisles__pin { height: auto; overflow: visible; }
   .aisles__track { position: static; display: block; width: auto; }
   .aisle { height: 100vh; height: 100svh; }
@@ -458,3 +453,8 @@ img.xcard__thumb { width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: 
 .closing__back:hover { background: var(--paper); color: var(--ink); }
 .closing.is-dusk .closing__back:hover { background: var(--sun); color: var(--ink); border-color: var(--sun); }
 .closing__back:focus-visible { outline: 2px solid var(--sun); outline-offset: 3px; }
+
+/* ---------- drawn storefront layers ---------- */
+.sf-layer { position: absolute; height: auto; max-width: none; pointer-events: none; user-select: none; }
+.sf-doorway { position: absolute; overflow: hidden; }
+.sf-door { position: absolute; height: auto; max-width: none; pointer-events: none; }

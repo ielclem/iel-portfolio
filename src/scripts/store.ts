@@ -55,7 +55,18 @@ function stopBoil() {
 const PETAL_COLORS = ['#F2B8B0', '#EBA39A', '#DA8868', '#F6CFC8'];
 const PETAL_ANGLE = 0.45;      // wind: sideways drift per unit of fall (≈24°)
 const FADE_START = 0.5;        // petals start fading at this fraction of the screen height
-type Petal = { x: number; y: number; size: number; speed: number; sway: number; phase: number; spin: number; rot: number; flip: number; color: string };
+type Petal = { x: number; y: number; size: number; speed: number; sway: number; phase: number; spin: number; rot: number; flip: number; color: string; art: number };
+
+// Iel's drawn petals (public/store/petal-1..5.png). Until they load, a simple petal shape is drawn instead.
+const PETAL_ART: HTMLImageElement[] = [];
+{
+  const base = (document.querySelector('.sf') as HTMLElement | null)?.dataset.base ?? '/';
+  for (let i = 1; i <= 5; i++) {
+    const img = new Image();
+    img.src = `${base}store/petal-${i}.png`;
+    PETAL_ART.push(img);
+  }
+}
 
 let petalStop: (() => void) | null = null;
 function startPetals() {
@@ -79,6 +90,7 @@ function startPetals() {
       rot: Math.random() * Math.PI * 2,
       flip: Math.random() * Math.PI * 2,
       color: PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)],
+      art: Math.floor(Math.random() * PETAL_ART.length),
     };
   };
 
@@ -101,6 +113,13 @@ function startPetals() {
     ctx.rotate(p.rot);
     ctx.scale(1, 0.35 + 0.65 * Math.abs(Math.cos(p.flip))); // flipping in 3D
     const s = p.size;
+    const art = PETAL_ART[p.art];
+    if (art?.complete && art.naturalWidth) {
+      const d = s * 2.4;
+      ctx.drawImage(art, -d / 2, -d / 2, d, d);
+      ctx.restore();
+      return;
+    }
     ctx.beginPath();
     ctx.moveTo(0, -s);
     ctx.bezierCurveTo(s * 0.9, -s * 0.6, s * 0.7, s * 0.6, 0, s);
@@ -303,10 +322,10 @@ function initStore() {
         },
       });
       sf.to('#sf-hint', { autoAlpha: 0, duration: 0.6 }, 0)
-        .to(sfWalker, { left: '36%', duration: WALK_END }, 0)
-        .to('#door-l', { x: -138, duration: 1.6, ease: 'power2.inOut' }, 3)
-        .to('#door-r', { x: 138, duration: 1.6, ease: 'power2.inOut' }, 3)
-        .to('#sf-world', { scale: 6, transformOrigin: '56.25% 66%', duration: 4, ease: 'power2.in' }, 5)
+        .to(sfWalker, { left: '46%', duration: WALK_END }, 0) // cart ends in the doorway
+        .to('#door-l', { xPercent: -100, duration: 1.6, ease: 'power2.inOut' }, 3)
+        .to('#door-r', { xPercent: 100, duration: 1.6, ease: 'power2.inOut' }, 3)
+        .to('#sf-world', { scale: 6, transformOrigin: '60.3% 71.6%', duration: 4, ease: 'power2.in' }, 5) // centre of the doorway
         .to(sfWalker, { autoAlpha: 0, duration: 1 }, 5.6)
         .to('#sf-veil', { autoAlpha: 1, duration: 1.4 }, 7.6);
 

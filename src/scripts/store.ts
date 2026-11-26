@@ -77,7 +77,7 @@ function startPetals() {
   let petals: Petal[] = [];
 
   const make = (anywhere: boolean): Petal => {
-    const size = gsap.utils.random(10, 20);
+    const size = gsap.utils.random(8, 22); // each petal keeps its own size
     return {
       // start along the top or off the left edge, since the wind blows left to right
       x: anywhere ? Math.random() * w : (Math.random() < 0.7 ? Math.random() * w - w * 0.3 : -20),
@@ -86,8 +86,8 @@ function startPetals() {
       speed: gsap.utils.random(28, 60) * (size / 14),      // px per second, bigger falls faster
       sway: gsap.utils.random(14, 34),
       phase: Math.random() * Math.PI * 2,
-      spin: gsap.utils.random(-1.6, 1.6),
-      rot: Math.random() * Math.PI * 2,
+      spin: gsap.utils.random(0.25, 0.45), // how far it rocks side to side, in radians
+      rot: Math.random() * Math.PI * 2,     // its resting angle
       flip: Math.random() * Math.PI * 2,
       color: PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)],
       art: Math.floor(Math.random() * PETAL_ART.length),
@@ -110,8 +110,7 @@ function startPetals() {
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(p.x, p.y);
-    ctx.rotate(p.rot);
-    ctx.scale(1, 0.35 + 0.65 * Math.abs(Math.cos(p.flip))); // flipping in 3D
+    ctx.rotate(p.rot + Math.sin(p.phase) * p.spin); // a gentle rock in time with the sway, no squashing
     const s = p.size;
     const art = PETAL_ART[p.art];
     if (art?.complete && art.naturalWidth) {
@@ -145,8 +144,6 @@ function startPetals() {
     for (let i = 0; i < petals.length; i++) {
       const p = petals[i];
       p.phase += dt * 1.3;
-      p.flip += dt * 2.2;
-      p.rot += p.spin * dt;
       const fall = p.speed * dt * (1 + Math.abs(gust) * 0.6);
       p.y += fall;
       p.x += fall * PETAL_ANGLE + Math.cos(p.phase) * p.sway * dt + gust * 40 * dt;

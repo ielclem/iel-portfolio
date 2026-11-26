@@ -147,7 +147,7 @@ html[data-mode="express"] .aisle-bar { display: none; }
 .sf__open { font: 400 28px var(--font-display); fill: var(--paper); stroke: none; }
 .sf__chalk { font: 600 21px var(--font-body); fill: var(--paper); stroke: none; }
 .sf__chalk--small { font-size: 15px; letter-spacing: .08em; text-transform: uppercase; fill: var(--sun); }
-.sf .walker { height: 32.5%; left: -20%; bottom: 8.8%; } /* sized to the drawn storefront; feet on its ground line */
+.sf .walker { height: 32.5%; left: -20%; bottom: 6.4%; } /* sized to the drawn storefront; feet level with the fruit stand legs (y 1991) */
 .sf__veil { position: absolute; inset: 0; background: var(--interior); opacity: 0; visibility: hidden; pointer-events: none; }
 .sf__hint {
   position: absolute; left: 50%; top: calc(var(--nav-h) + 12px); translate: -50% 0; margin: 0;

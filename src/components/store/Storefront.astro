@@ -7,9 +7,14 @@ import { base } from '../../data/site';
 const W = 3840, H = 2160;
 type Layer = { name: string; x: number; y: number; w: number; h: number; alt?: string; cls?: string };
 // Back to front, in the same order as the PSD.
+// Ground and bushes repeat sideways so they reach the edges of any screen.
+// tileW is the width of one repeat in canvas px: 3840 for the current drawings,
+// or the width of the seamless tile once it's drawn (e.g. 1920).
+const strips = [
+  { name: 'backdrop-bushes', y: 1565, h: 370, tileW: 3840 },
+  { name: 'ground', y: 1929, h: 231, tileW: 3840 },
+];
 const layers: Layer[] = [
-  { name: 'ground', x: 0, y: 1929, w: 3840, h: 231 },
-  { name: 'backdrop-bushes', x: 0, y: 1565, w: 3840, h: 370, cls: 'sf-layer--bushes' },
   { name: 'doorway-inside', x: 2064, y: 1188, w: 508, h: 636 },
   { name: 'building', x: 1002, y: 21, w: 1965, h: 1970 },
   { name: 'window-sign', x: 1381, y: 1309, w: 420, h: 203 },
@@ -31,7 +36,11 @@ const place = (l: { x: number; y: number; w: number }, ox = 0, oy = 0, ow = W, o
   <h1 id="sf-title" class="visually-hidden">iel's market. Hello, I'm Iel, a product designer, and I'm open for hiring. Designing products like little love letters.</h1>
   <div class="sf__stage">
     <div class="sf__world" id="sf-world" aria-hidden="true">
-      {layers.slice(0, 4).map((l) => (
+      {strips.map((st) => (
+        <div class={`sf-strip sf-strip--${st.name}`}
+          style={`top:${pct(st.y, H)};height:${pct(st.h, H)};background-image:url(${base}store/${st.name}.webp);background-size:${((st.tileW / W) * 100 / 3).toFixed(4)}% 100%`}></div>
+      ))}
+      {layers.slice(0, 2).map((l) => (
         <img class={`sf-layer ${l.cls ?? ''}`} src={`${base}store/${l.name}.webp`} alt="" width={l.w} height={l.h} style={place(l)} decoding="async" fetchpriority={l.name === 'building' ? 'high' : 'auto'} />
       ))}
 
@@ -42,7 +51,7 @@ const place = (l: { x: number; y: number; w: number }, ox = 0, oy = 0, ow = W, o
         ))}
       </div>
 
-      {layers.slice(4).map((l) => (
+      {layers.slice(2).map((l) => (
         <img class={`sf-layer ${l.cls ?? ''}`} src={`${base}store/${l.name}.webp`} alt="" width={l.w} height={l.h} style={place(l)} decoding="async" />
       ))}
 

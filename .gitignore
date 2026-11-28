@@ -36,3 +36,6 @@ test.gif
 *.mdp
 SVG/
 *.tmp
+
+# Animation source exports (the site uses sprites made from these)
+/*.gif

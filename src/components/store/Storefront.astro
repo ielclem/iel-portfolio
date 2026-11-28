@@ -1,63 +1,51 @@
 ---
-// Storefront scene, built from Iel's drawn layers (public/store/*.webp).
-// Each layer sits where it was in the 3840 × 2160 PSD, so positions are
-// percentages of that canvas. Re-export a layer with the same name to update it.
+// Storefront scene, from Iel's coloured PSD (GOODCOPY storefront.psd, 5400 × 2160).
+// Only the doors move, so the drawing is flattened into three pieces:
+//   store-back  — everything behind the doors (building, fence, ground, shelves inside)
+//   door-left / door-right — slide apart on scroll
+//   store-front — everything drawn over the doors (fairy lights, signs, props, petals)
+// The scene "world" is the middle 3840 × 2160 of the canvas (the store sits there);
+// the extra 780 px on each side fill wider screens. Positions are % of that world.
 import { base } from '../../data/site';
 
-const W = 3840, H = 2160;
-type Layer = { name: string; x: number; y: number; w: number; h: number; alt?: string; cls?: string };
-// Back to front, in the same order as the PSD.
-// Ground and bushes repeat sideways so they reach the edges of any screen.
-// tileW is the width of one repeat in canvas px: 3840 for the current drawings,
-// or the width of the seamless tile once it's drawn (e.g. 1920).
-const strips = [
-  { name: 'backdrop-bushes', y: 1565, h: 370, tileW: 3840 },
-  { name: 'ground', y: 1929, h: 231, tileW: 3840 },
-];
-const layers: Layer[] = [
-  { name: 'doorway-inside', x: 2064, y: 1188, w: 508, h: 636 },
-  { name: 'building', x: 1002, y: 21, w: 1965, h: 1970 },
-  { name: 'window-sign', x: 1381, y: 1309, w: 420, h: 203 },
-  { name: 'store-name', x: 1701, y: 369, w: 524, h: 271 },
-  { name: 'fruit-stand', x: 1228, y: 1620, w: 759, h: 214, cls: 'sf-layer--front' },
-  { name: 'chalkboard', x: 2636, y: 1492, w: 345, h: 521, cls: 'sf-layer--front' },
-];
-// The two glass doors slide apart inside the doorway, which hides them as they go.
-const doorway = { x: 2056, y: 1151, w: 2576 - 2056, h: 1943 - 1151 };
+const W = 3840, H = 2160, OFFSET = 780; // world = canvas x 780 … 4620
+type Piece = { x: number; y: number; w: number; h: number };
+const back: Piece = { x: 0, y: 21, w: 5400, h: 2139 };
+const front: Piece = { x: 948, y: 369, w: 3644, h: 1787 };
+// The doors slide apart inside the doorway, which hides them as they go.
+const doorway: Piece = { x: 2829, y: 1151, w: 3356 - 2829, h: 1943 - 1151 };
 const doors = [
-  { id: 'door-l', name: 'door-left', x: 2056, y: 1152, w: 285, h: 791 },
-  { id: 'door-r', name: 'door-right', x: 2291, y: 1151, w: 285, h: 791 },
+  { id: 'door-l', name: 'door-left', x: 2829, y: 1152, w: 305, h: 791 },
+  { id: 'door-r', name: 'door-right', x: 3071, y: 1151, w: 285, h: 791 },
 ];
-const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(3)}%`;
-const place = (l: { x: number; y: number; w: number }, ox = 0, oy = 0, ow = W, oh = H) =>
-  `left:${pct(l.x - ox, ow)};top:${pct(l.y - oy, oh)};width:${pct(l.w, ow)}`;
+const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(4)}%`;
+const inWorld = (p: Piece) => `left:${pct(p.x - OFFSET, W)};top:${pct(p.y, H)};width:${pct(p.w, W)}`;
+const inDoorway = (p: Piece) => `left:${pct(p.x - doorway.x, doorway.w)};top:${pct(p.y - doorway.y, doorway.h)};width:${pct(p.w, doorway.w)}`;
 ---
 <section id="storefront" class="sf" aria-labelledby="sf-title" data-base={base}>
   <h1 id="sf-title" class="visually-hidden">iel's market. Hello, I'm Iel, a product designer, and I'm open for hiring. Designing products like little love letters.</h1>
   <div class="sf__stage">
     <div class="sf__world" id="sf-world" aria-hidden="true">
-      {strips.map((st) => (
-        <div class={`sf-strip sf-strip--${st.name}`}
-          style={`top:${pct(st.y, H)};height:${pct(st.h, H)};background-image:url(${base}store/${st.name}.webp);background-size:${((st.tileW / W) * 100 / 3).toFixed(4)}% 100%`}></div>
-      ))}
-      {layers.slice(0, 2).map((l) => (
-        <img class={`sf-layer ${l.cls ?? ''}`} src={`${base}store/${l.name}.webp`} alt="" width={l.w} height={l.h} style={place(l)} decoding="async" fetchpriority={l.name === 'building' ? 'high' : 'auto'} />
-      ))}
+      <img class="sf-layer" src={`${base}store/store-back.webp`} alt="" width={back.w} height={back.h} style={inWorld(back)} fetchpriority="high" />
 
-      <div class="sf-doorway" style={`${place(doorway)};height:${pct(doorway.h, H)}`}>
+      <div class="sf-doorway" style={`${inWorld(doorway)};height:${pct(doorway.h, H)}`}>
         {doors.map((d) => (
-          <img id={d.id} class="sf-door" src={`${base}store/${d.name}.webp`} alt="" width={d.w} height={d.h}
-            style={place(d, doorway.x, doorway.y, doorway.w, doorway.h)} decoding="async" />
+          <img id={d.id} class="sf-door" src={`${base}store/${d.name}.webp`} alt="" width={d.w} height={d.h} style={inDoorway(d)} />
         ))}
       </div>
 
-      {layers.slice(2).map((l) => (
-        <img class={`sf-layer ${l.cls ?? ''}`} src={`${base}store/${l.name}.webp`} alt="" width={l.w} height={l.h} style={place(l)} decoding="async" />
-      ))}
+      <img class="sf-layer" src={`${base}store/store-front.webp`} alt="" width={front.w} height={front.h} style={inWorld(front)} />
 
       <div class="walker" id="sf-walker" style={`--sprite: url(${base}hero/walk-sprite.webp)`}></div>
     </div>
     <canvas class="sf__petals" id="sf-petals" aria-hidden="true"></canvas>
+    <!-- Lighting pass over the drawing: warm sun from the top-right corner,
+         soft rays fanning out from it, and a gentle shade in the far corner. -->
+    <div class="sf-light" id="sf-light" aria-hidden="true">
+      <span class="sf-light__glow"></span>
+      <span class="sf-light__rays"></span>
+      <span class="sf-light__shade"></span>
+    </div>
     <div class="sf__veil" id="sf-veil" aria-hidden="true"></div>
     <p class="sf__hint" id="sf-hint" aria-hidden="true">scroll to step inside ↓</p>
   </div>

@@ -33,6 +33,11 @@ import ExpressLane from '../components/store/ExpressLane.astro';
         <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="1" />
         <feDisplacementMap in="SourceGraphic" scale="2.5" />
       </filter>
+      <!-- Hand-drawn wobble for the storefront art: long, gentle waves, re-seeded a few times a second -->
+      <filter id="doodle" x="-2%" y="-2%" width="104%" height="104%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" seed="1" />
+        <feDisplacementMap in="SourceGraphic" scale="2" xChannelSelector="R" yChannelSelector="G" />
+      </filter>
     </svg>
 
     <a class="visually-hidden" href="#directory">Skip to the projects</a>

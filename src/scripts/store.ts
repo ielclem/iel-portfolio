@@ -10,38 +10,72 @@ gsap.registerPlugin(ScrollTrigger, SplitText);
 const FRAMES = 8;              // frames in walk-sprite.webp
 const PX_PER_FRAME = 70;       // horizontal scroll distance per walk frame in the aisles
 const STOREFRONT_LENGTH = 2.6; // storefront scroll length, in screen heights
-const BOIL_MS = 140;           // how often hand-drawn lines wobble
+const BOIL_MS = 250;           // how often hand-drawn lines wobble (4 times a second)
 const IDLE_AFTER_MS = 220;     // stop scrolling this long and the character switches to the idle pose
 // --------------------------------------------------------------------------
 
 const root = document.documentElement;
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-// The sprite holds the 8 walk frames and then the idle pose (frame 8).
-const IDLE_FRAME = FRAMES;
-const placeFrame = (el: HTMLElement, f: number) => { el.style.backgroundPositionX = `${(f * 100) / FRAMES}%`; };
+// The sprite (walk-sprite.webp) holds 11 frames side by side:
+//   0–7  walk cycle (goodcopy walk.gif)
+//   8    idle-stand, 9 idle-bounce, 10 idle-blink (Idle Coloured.psd)
+const STAND = FRAMES, BOUNCE = FRAMES + 1, BLINK = FRAMES + 2;
+const SPRITE_FRAMES = FRAMES + 3;
+const IDLE_STEP_MS = 420;            // stand ↔ bounce rhythm while idle
+const BLINK_MS = 160;                // how long a blink lasts
+const BLINK_EVERY = [2600, 5200];    // a blink every 2.6–5.2 s, at random
+const placeFrame = (el: HTMLElement, f: number) => { el.style.backgroundPositionX = `${(f * 100) / (SPRITE_FRAMES - 1)}%`; };
+
+// While standing still, the character bounces gently between stand and bounce,
+// and blinks now and then. Walking stops the idle loop.
+type IdleState = { step?: number; blink?: number; up: boolean };
+const idleLoops = new WeakMap<HTMLElement, IdleState>();
+function stopIdle(el: HTMLElement) {
+  const s = idleLoops.get(el);
+  if (!s) return;
+  window.clearInterval(s.step); window.clearTimeout(s.blink);
+  idleLoops.delete(el);
+}
+function startIdle(el: HTMLElement) {
+  stopIdle(el);
+  placeFrame(el, STAND);
+  if (reduceMotion.matches) return; // hold the stand pose
+  const s: IdleState = { up: false };
+  s.step = window.setInterval(() => { s.up = !s.up; placeFrame(el, s.up ? BOUNCE : STAND); }, IDLE_STEP_MS);
+  const queueBlink = () => {
+    s.blink = window.setTimeout(() => {
+      placeFrame(el, BLINK);
+      window.setTimeout(() => { if (idleLoops.get(el) === s) placeFrame(el, s.up ? BOUNCE : STAND); }, BLINK_MS);
+      queueBlink();
+    }, gsap.utils.random(BLINK_EVERY[0], BLINK_EVERY[1]));
+  };
+  queueBlink();
+  idleLoops.set(el, s);
+}
 
 // Walking shows a frame for the scroll position; when scrolling stops, the character idles.
 const idleTimers = new WeakMap<HTMLElement, number>();
 const setFrame = (el: HTMLElement, i: number) => {
+  stopIdle(el);
   placeFrame(el, ((i % FRAMES) + FRAMES) % FRAMES);
   window.clearTimeout(idleTimers.get(el));
-  idleTimers.set(el, window.setTimeout(() => placeFrame(el, IDLE_FRAME), IDLE_AFTER_MS));
+  idleTimers.set(el, window.setTimeout(() => startIdle(el), IDLE_AFTER_MS));
 };
-const setIdle = (el: HTMLElement | null) => el && placeFrame(el, IDLE_FRAME);
-// Start idle (and stay idle for reduced motion, where nothing walks).
+const setIdle = (el: HTMLElement | null) => el && startIdle(el);
+// Start idle (reduced motion holds the stand pose).
 setIdle(document.getElementById('sf-walker'));
 setIdle(document.getElementById('aisle-walker'));
 
 // ---- Boiling lines: re-seed the noise filter so drawings feel hand-animated
 let boilTimer: number | undefined;
 function startBoil() {
-  const turb = document.querySelector('#boil feTurbulence');
-  if (!turb || boilTimer || reduceMotion.matches) return;
+  const turbs = Array.from(document.querySelectorAll('#boil feTurbulence, #doodle feTurbulence'));
+  if (!turbs.length || boilTimer || reduceMotion.matches) return;
   let seed = 1;
   boilTimer = window.setInterval(() => {
     seed = (seed % 3) + 1;
-    turb.setAttribute('seed', String(seed));
+    turbs.forEach((t) => t.setAttribute('seed', String(seed)));
   }, BOIL_MS);
 }
 function stopBoil() {
@@ -50,21 +84,35 @@ function stopBoil() {
 }
 
 // ---- Falling petals on the storefront --------------------------------------
-// Drawn on a canvas: each petal drifts down at an angle, sways, spins and
-// flips as it falls. Scrolling adds a little gust. Paused when off-screen.
+// Drawn on a canvas: each petal drifts down at an angle with its own size,
+// sway and gentle rock, while playing Iel's animated petal (a 5-frame sprite
+// made from petal-animated.gif). Scrolling adds a little gust. Paused when off-screen.
 const PETAL_COLORS = ['#F2B8B0', '#EBA39A', '#DA8868', '#F6CFC8'];
 const PETAL_ANGLE = 0.45;      // wind: sideways drift per unit of fall (≈24°)
 const FADE_START = 0.5;        // petals start fading at this fraction of the screen height
-type Petal = { x: number; y: number; size: number; speed: number; sway: number; phase: number; spin: number; rot: number; flip: number; color: string; art: number };
+const PETAL_SIZE = [14, 25];   // drawn size range in px (smallest, largest)
+const PETAL_FRAMES = 5;        // frames in petal-sprite-64.png
+const PETAL_FRAME_PX = 64;     // each frame is 64 × 64: pre-shrunk from the GIF, sharp up to ~32 px on 2× screens
+const PETAL_FRAME_MS = 200;    // the GIF's frame timing
+type Petal = { x: number; y: number; size: number; speed: number; sway: number; freq: number; phase: number; spin: number; rot: number; color: string; frameOffset: number };
 
-// Iel's drawn petals (public/store/petal-1..5.png). Until they load, a simple petal shape is drawn instead.
-const PETAL_ART: HTMLImageElement[] = [];
+// Until the sprite loads, a simple petal shape is drawn instead.
+const PETAL_SPRITE = new Image();
+PETAL_SPRITE.src = `${(document.querySelector('.sf') as HTMLElement | null)?.dataset.base ?? '/'}store/petal-sprite-64.png`;
+
+// ---- Storefront light follows the pointer a little (mouse/trackpad only) ----
 {
-  const base = (document.querySelector('.sf') as HTMLElement | null)?.dataset.base ?? '/';
-  for (let i = 1; i <= 5; i++) {
-    const img = new Image();
-    img.src = `${base}store/petal-${i}.png`;
-    PETAL_ART.push(img);
+  const light = document.getElementById('sf-light');
+  const sf = document.getElementById('storefront');
+  if (light && sf && !reduceMotion.matches && matchMedia('(pointer: fine)').matches) {
+    const toX = gsap.quickTo(light, '--lx', { duration: 1.2, ease: 'power3.out' });
+    const toY = gsap.quickTo(light, '--ly', { duration: 1.2, ease: 'power3.out' });
+    sf.addEventListener('pointermove', (e) => {
+      const r = sf.getBoundingClientRect();
+      toX(((e.clientX - r.left) / r.width - 0.5) * 2);   // -1 … 1
+      toY(((e.clientY - r.top) / r.height - 0.5) * 2);
+    });
+    sf.addEventListener('pointerleave', () => { toX(0); toY(0); });
   }
 }
 
@@ -77,20 +125,20 @@ function startPetals() {
   let petals: Petal[] = [];
 
   const make = (anywhere: boolean): Petal => {
-    const size = gsap.utils.random(8, 22); // each petal keeps its own size
+    const size = gsap.utils.random(PETAL_SIZE[0], PETAL_SIZE[1]); // each petal keeps its own size
     return {
       // start along the top or off the left edge, since the wind blows left to right
       x: anywhere ? Math.random() * w : (Math.random() < 0.7 ? Math.random() * w - w * 0.3 : -20),
       y: anywhere ? Math.random() * h : -20 - Math.random() * h * 0.3,
       size,
-      speed: gsap.utils.random(28, 60) * (size / 14),      // px per second, bigger falls faster
-      sway: gsap.utils.random(14, 34),
+      speed: gsap.utils.random(22, 50) * (0.6 + size / 40), // px per second, bigger falls a little faster
+      sway: gsap.utils.random(8, 32),                       // how far it drifts side to side
+      freq: gsap.utils.random(0.7, 1.9),                    // how quickly it sways
       phase: Math.random() * Math.PI * 2,
-      spin: gsap.utils.random(0.25, 0.45), // how far it rocks side to side, in radians
-      rot: Math.random() * Math.PI * 2,     // its resting angle
-      flip: Math.random() * Math.PI * 2,
+      spin: gsap.utils.random(0.15, 0.5),  // how far it rocks side to side, in radians
+      rot: Math.random() * Math.PI * 2,    // its resting angle
       color: PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)],
-      art: Math.floor(Math.random() * PETAL_ART.length),
+      frameOffset: Math.floor(Math.random() * PETAL_FRAMES), // so the petals don't animate in sync
     };
   };
 
@@ -99,11 +147,11 @@ function startPetals() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     w = r.width; h = r.height;
     canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
-    const count = Math.round(gsap.utils.clamp(12, 34, w / 45));
+    const count = Math.round(gsap.utils.clamp(16, 40, w / 40));
     petals = Array.from({ length: count }, () => make(true));
   };
 
-  const draw = (p: Petal) => {
+  const draw = (p: Petal, now: number) => {
     // Fade out over the lower part of the screen, fully gone at the bottom edge.
     const alpha = gsap.utils.clamp(0, 1, (h - p.y) / (h * (1 - FADE_START)));
     if (alpha <= 0) return;
@@ -111,14 +159,14 @@ function startPetals() {
     ctx.globalAlpha = alpha;
     ctx.translate(p.x, p.y);
     ctx.rotate(p.rot + Math.sin(p.phase) * p.spin); // a gentle rock in time with the sway, no squashing
-    const s = p.size;
-    const art = PETAL_ART[p.art];
-    if (art?.complete && art.naturalWidth) {
-      const d = s * 2.4;
-      ctx.drawImage(art, -d / 2, -d / 2, d, d);
+    if (PETAL_SPRITE.complete && PETAL_SPRITE.naturalWidth) {
+      const f = (Math.floor(now / PETAL_FRAME_MS) + p.frameOffset) % PETAL_FRAMES;
+      const d = p.size;
+      ctx.drawImage(PETAL_SPRITE, f * PETAL_FRAME_PX, 0, PETAL_FRAME_PX, PETAL_FRAME_PX, -d / 2, -d / 2, d, d);
       ctx.restore();
       return;
     }
+    const s = p.size / 2.4;
     ctx.beginPath();
     ctx.moveTo(0, -s);
     ctx.bezierCurveTo(s * 0.9, -s * 0.6, s * 0.7, s * 0.6, 0, s);
@@ -140,15 +188,16 @@ function startPetals() {
     if (!visible) return;
     const gust = gsap.utils.clamp(-1, 3, (lenis?.velocity ?? 0) / 20); // scrolling pushes them along
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingQuality = 'high';
     ctx.clearRect(0, 0, w, h);
     for (let i = 0; i < petals.length; i++) {
       const p = petals[i];
-      p.phase += dt * 1.3;
+      p.phase += dt * p.freq;
       const fall = p.speed * dt * (1 + Math.abs(gust) * 0.6);
       p.y += fall;
       p.x += fall * PETAL_ANGLE + Math.cos(p.phase) * p.sway * dt + gust * 40 * dt;
       if (p.y > h + 30 || p.x > w + 40) petals[i] = make(false);
-      draw(petals[i]);
+      draw(petals[i], now);
     }
   };
 
@@ -302,6 +351,7 @@ function initStore() {
 
       // ---------- Storefront: walk to the door, doors open, push inside
       const sfWalker = document.getElementById('sf-walker') as HTMLElement;
+      const sfWorld = document.getElementById('sf-world') as HTMLElement;
       const WALK_END = 4.5;
       const sf = gsap.timeline({
         defaults: { ease: 'none' },
@@ -315,6 +365,7 @@ function initStore() {
             const t = self.progress * sf.duration();
             if (t <= WALK_END) setFrame(sfWalker, Math.floor((t / WALK_END) * FRAMES * 3));
             sfWalker.classList.toggle('is-back', self.direction < 0 && t < WALK_END);
+            sfWorld.classList.toggle('is-zooming', t > WALK_END + 0.5); // pause the wobble while zooming in
           },
         },
       });
